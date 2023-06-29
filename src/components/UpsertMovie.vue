@@ -118,7 +118,7 @@
 </template>
 
 <script>
-import { db, collection, addDoc, serverTimestamp } from '@/firebase'
+import { db, collection, addDoc, serverTimestamp, onAuthStateChanged, getAuth } from '@/firebase'
 
 export default {
     name: 'upsert-movie',
@@ -152,7 +152,22 @@ export default {
     },
 
     methods: {
+        getUserId () {
+            return new Promise((resolve, reject) => {
+                const removeListener = onAuthStateChanged(
+                    getAuth(),
+                    (user) => {
+                        removeListener()
+                        resolve(user.uid)
+                    },
+                    reject
+                )
+            })
+        },
+
         async upsertMovie () {
+            const id = await this.getUserId()
+
             this.isUpsertMovie = true
 
             const data = {
@@ -161,7 +176,7 @@ export default {
                 timeAdded: serverTimestamp()
             }
 
-            await addDoc(collection(db, 'movieslist'), data)
+            await addDoc(collection(db, `userMoviesList/${id}/moviesList`), data)
 
             this.closeUpsertMovie()
 

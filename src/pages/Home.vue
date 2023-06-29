@@ -120,7 +120,7 @@
 </template>
 
 <script>
-import { db, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, where } from '@/firebase'
+import { db, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, where, getAuth, onAuthStateChanged } from '@/firebase'
 
 import HeartIcon from '@/components/icons/HeartIcon.vue'
 import UpsertMovie from '@/components/UpsertMovie.vue'
@@ -146,11 +146,14 @@ export default {
             showUpsertMovie: false,
             searchKey: '',
             moviesCount: '',
-            type: ''
+            type: '',
+            userId: ''
         }
     },
 
-    created () {
+    async created () {
+        this.userId = await this.getUserId()
+
         this.initTableData()
     },
 
@@ -161,11 +164,24 @@ export default {
             this.getMoviesData()
         },
 
-        getMoviesData (type = 'MOVIE') {
+        getUserId () {
+            return new Promise((resolve, reject) => {
+                const removeListener = onAuthStateChanged(
+                    getAuth(),
+                    (user) => {
+                        removeListener()
+                        resolve(user.uid)
+                    },
+                    reject
+                )
+            })
+        },
+
+        async getMoviesData (type = 'MOVIE') {
             this.isTableLoading = true
             this.type = type
 
-            const moviesListQuery = query(collection(db, 'movieslist'), where('type', '==', type), orderBy('timeAdded', 'desc'))
+            const moviesListQuery = query(collection(db, `userMoviesList/${this.userId}/moviesList`), where('type', '==', type), orderBy('timeAdded', 'desc'))
 
             onSnapshot(moviesListQuery, (querySnapshot) => {
                 this.setTableData(querySnapshot)
@@ -221,11 +237,11 @@ export default {
         },
 
         async deleteMovie (id) {
-            await deleteDoc(doc(db, 'movieslist', id))
+            await deleteDoc(doc(db, `userMoviesList/${this.userId}/moviesList`, id))
         },
 
         async toggleFavorite (id, isFavorite) {
-            await updateDoc(doc(db, 'movieslist', id), {
+            await updateDoc(doc(db, `userMoviesList/${this.userId}/moviesList`, id), {
                 isFavorite: !isFavorite
             })
         },

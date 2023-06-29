@@ -1,6 +1,9 @@
 const Home = () => import('@/pages/Home.vue')
 const Authentication = () => import('@/pages/Authentication.vue')
 
+const Login = () => import('@/components/Login.vue')
+const Register = () => import('@/components/Register.vue')
+
 export default [
     {
         path: '/',
@@ -10,12 +13,28 @@ export default [
     {
         path: '/home',
         name: 'Home',
-        component: Home
+        component: Home,
+        meta: {
+            requiresAuth: true
+        }
     },
 
     {
-        path: '/login',
+        path: '/auth',
         name: 'Authentication',
-        component: Authentication
+        component: Authentication,
+        children: [
+            {
+                path: '/login',
+                name: 'Login',
+                component: Login
+            },
+
+            {
+                path: '/register',
+                name: 'Register',
+                component: Register
+            }
+        ]
     }
 ]
